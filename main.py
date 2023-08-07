@@ -231,7 +231,7 @@ def create_visualization_of_daily_activities(token: str, activities: List[Dict[s
     plt.show()
 
 
-def insert_image_into_obsidian_note() -> None:
+def insert_image_into_obsidian_note(date: str) -> None:
     """
     Insert an image into an Obsidian note. This function is idempotent.
 
@@ -244,16 +244,16 @@ def insert_image_into_obsidian_note() -> None:
     if not obsidian_root:
         raise ValueError("OBSIDIAN_VAULT environment variable not set!")
 
-    # Calculate the filename for "yesterday"
-    yesterday = datetime.date.today() - datetime.timedelta(days=1)
-    note_filename = os.path.join(obsidian_root, yesterday.strftime('%Y-%m-%d.md'))
-    image_filename = yesterday.strftime('%Y-%m-%d-timeular.png')
+    # Calculate the filename for "date"
+    note_filename = os.path.join(obsidian_root, f'{date}.md')
+    image_filename = f'{date}-timeular.png'
     image_link = f'![[{image_filename}]]\n'
 
     # Check if the note file exists
     if not os.path.exists(note_filename):
         # Check to see if the archived version is available
-        archived = os.path.join(obsidian_root, 'Daily Notes', yesterday.strftime('%Y-%m-%d.md'))
+        archived = os.path.join(obsidian_root, 'Daily Notes', f'{date}.md')
+        logger.warning(f"Note file {note_filename} does not exist! Checking for archived: {archived} version...")
         if not os.path.exists(archived):
             raise FileNotFoundError(f"neither {archived} or {note_filename} exist!")
         else:
@@ -297,7 +297,7 @@ def main() -> int:
         token = get_token(API_KEY, API_SECRET)
         activities = fetch_activities(token, args.date)
         create_visualization_of_daily_activities(token, activities, args.date, args.facecolor)
-        insert_image_into_obsidian_note()
+        insert_image_into_obsidian_note(args.date)
     except requests.RequestException as e:
         logger.error(f'API Request failed: {e}')
         raise e
