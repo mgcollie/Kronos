@@ -1,5 +1,6 @@
 import argparse
 import datetime
+import logging
 import os
 import sys
 import requests
@@ -10,14 +11,30 @@ from dotenv import load_dotenv
 from typing import Dict, Tuple, List, Union
 from schema import Schema, And, Use
 
+# Setup logging
+logger = logging.getLogger(__name__)
 
+# Constants
+API_ENDPOINT = "https://api.timeular.com/api/v3"
+
+# Load environment variables
 load_dotenv()
 
-# Timeular API setup
-API_ENDPOINT = "https://api.timeular.com/api/v3"
 API_KEY = os.getenv('TIMEULAR_API_KEY')
 API_SECRET = os.getenv('TIMEULAR_API_SECRET')
 OBSIDIAN_VAULT = os.getenv('OBSIDIAN_VAULT', r'C:\Users\mgcol\Dropbox\obsidian\obsidian')
+
+
+def setup_logging(log_level: str) -> None:
+    """
+    Configure logging based on the provided log level.
+
+    :param log_level: The log level to use.
+    """
+    numeric_level = getattr(logging, log_level.upper(), None)
+    if not isinstance(numeric_level, int):
+        raise ValueError(f'Invalid log level: {log_level}')
+    logging.basicConfig(level=numeric_level, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 def valid_date(date_string: str) -> str:
@@ -42,7 +59,10 @@ def parse_args():
     # Default to "yesterday" if no date argument is provided
     default_date = (datetime.datetime.today() - datetime.timedelta(days=1)).strftime('%Y-%m-%d')
     parser.add_argument('-d', '--date', default=default_date, type=valid_date, help="Date in the format 'YYYY-MM-DD'")
-    parser.add_argument('-f', '--facecolor', default='#1e1e1e', help="Background color for the visualization. Defaults to '#1e1e1e'.")
+    parser.add_argument('-f', '--facecolor', default='#1e1e1e', help="Background color for the visualization. "
+                                                                     "Defaults to '#1e1e1e'.")
+    parser.add_argument('-l', '--log-level', default='INFO', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+                        help='Set the logging level.')
     return parser.parse_args()
 
 
@@ -232,7 +252,12 @@ def insert_image_into_obsidian_note() -> None:
 
     # Check if the note file exists
     if not os.path.exists(note_filename):
-        raise FileNotFoundError(f"{note_filename} not found!")
+        # Check to see if the archived version is available
+        archived = os.path.join(obsidian_root, 'Daily Notes', yesterday.strftime('%Y-%m-%d.md'))
+        if not os.path.exists(archived):
+            raise FileNotFoundError(f"neither {archived} or {note_filename} exist!")
+        else:
+            note_filename = archived
 
     # Read the contents of the file
     with open(note_filename, 'r') as file:
@@ -240,6 +265,7 @@ def insert_image_into_obsidian_note() -> None:
 
     # Check if the image link is already present
     if image_link in content:
+        logger.info(f"Image link {image_link} already present in the note. Nothing to do...")
         return
 
     # Locate the line with "# Timeular" and insert the image link on the next line
@@ -260,12 +286,24 @@ def main() -> int:
     Main function to execute the entire workflow.
 
     :return: 0 if successful
+    :raises: requests.RequestException if the API request fails
     """
     args = parse_args()
-    token = get_token(API_KEY, API_SECRET)
-    activities = fetch_activities(token, args.date)
-    create_visualization_of_daily_activities(token, activities, args.date, args.facecolor)
-    insert_image_into_obsidian_note()
+
+    # Set up logging
+    setup_logging(args.log_level)
+
+    try:
+        token = get_token(API_KEY, API_SECRET)
+        activities = fetch_activities(token, args.date)
+        create_visualization_of_daily_activities(token, activities, args.date, args.facecolor)
+        insert_image_into_obsidian_note()
+    except requests.RequestException as e:
+        logger.error(f'API Request failed: {e}')
+        raise e
+    except Exception as e:
+        logger.error(f'Unexpected error: {e}')
+        raise e
 
     return 0
 
