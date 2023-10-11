@@ -49,7 +49,7 @@ def valid_date(date_string: str) -> str:
     return date_schema.validate(date_string)
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     """
     This function is responsible for parsing the command line interface of this program.
 
