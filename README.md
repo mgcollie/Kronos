@@ -1,11 +1,28 @@
-<table align="center"><tr><td align="center" width="9999">
-    <h1>Timeular | Kronos | Obsidian </h1>
-    <img src="resources/timeular-logo.png" align="center" height=100", alt="Project icon"> |
-    <img src="resources/kronos.gif" align="center" alt="Project icon"> |
-    <img src="resources/obsidian-logo.png" align="center" height=100", alt="Project icon">
-</td></tr></table>
-<div align="center">
-</div>
+<table align="center">
+    <tr>
+        <td align="center" width="9999">
+            <h1 style="margin-bottom: 0.5em;">Timeular | Kronos | Obsidian </h1>
+            <div style="display: inline-block; vertical-align: middle;">
+                <img src="resources/timeular-logo.png" alt="Timeular logo" style="height:100px;">
+            </div>
+            <div style="display: inline-block; vertical-align: middle;">
+                <h1> | </h1>
+            </div>
+            <div style="display: inline-block; vertical-align: middle;">
+                <img src="resources/kronos.gif" alt="Kronos logo" style="height:100px;">
+            </div>
+            <div style="display: inline-block; vertical-align: middle;">
+                <h1> | </h1>
+            </div>
+            <div style="display: inline-block; vertical-align: middle;">
+                <img src="resources/obsidian-logo.png" alt="Obsidian logo" style="height:100px;">
+            </div>
+        </td>
+    </tr>
+</table>
+
+
+
 
 # License
 [View License](LICENSE.md)
